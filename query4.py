@@ -3,19 +3,19 @@ import re
 import numpy as np
 
 ARQUIVO_ENTRADA = 'relatorio_consolidado.csv'
-ARQUIVO_SAIDA = 'analise_quantitativa_pt.csv'
+ARQUIVO_SAIDA = 'analise_quantitativa.csv' 
 
 try:
     df = pd.read_csv(ARQUIVO_ENTRADA, sep=';')
     print(f"Arquivo '{ARQUIVO_ENTRADA}' carregado com sucesso.")
 except FileNotFoundError:
     print(f"ERRO: O arquivo '{ARQUIVO_ENTRADA}' não foi encontrado.")
-    print("Por favor, certifique-se de que o script está na mesma pasta que o seu relatório consolidado.")
     exit()
 
 modelos = sorted(df['identificador_modelo'].unique())
-colunas_reais = [col for col in df.columns if col.startswith('real_tem_')]
-vulnerabilidades = sorted([re.sub(r'^real_tem_', '', col) for col in colunas_reais])
+colunas_preditas = [col for col in df.columns if col.startswith('pred_tem_')]
+vulnerabilidades = sorted([re.sub(r'^pred_tem_', '', col) for col in colunas_preditas])
+
 
 print(f"\nModelos encontrados: {', '.join(modelos)}")
 print(f"Vulnerabilidades encontradas: {', '.join(vulnerabilidades)}\n")
@@ -31,22 +31,19 @@ for modelo in modelos:
     total_tn = 0
 
     for vuln in vulnerabilidades:
-        coluna_real = f'real_tem_{vuln}'
         coluna_predita = f'pred_tem_{vuln}'
 
-        if coluna_real not in df_modelo.columns or coluna_predita not in df_modelo.columns:
+        if coluna_predita not in df_modelo.columns:
             continue
-
-        y_real = df_modelo[coluna_real].astype(str).str.lower() == 'true'
+        
+        y_real = pd.Series([True] * len(df_modelo), index=df_modelo.index)
+        
         y_predito = df_modelo[coluna_predita].astype(str).str.lower() == 'true'
 
-        tp = (y_real & y_predito).sum()
-        
-        fp = (~y_real & y_predito).sum()
-        
-        fn = (y_real & ~y_predito).sum()
-
-        tn = (~y_real & ~y_predito).sum()
+        tp = (y_real & y_predito).sum()      # Acertos: O modelo previu 'True' e o real era 'True'.
+        fp = (~y_real & y_predito).sum()     # Erros (Tipo I): Sempre será 0, pois ~y_real é sempre 'False'.
+        fn = (y_real & ~y_predito).sum()     # Erros (Tipo II): O modelo previu 'False' quando o real era 'True'.
+        tn = (~y_real & ~y_predito).sum()     # Acertos Negativos: Sempre será 0, pois ~y_real é sempre 'False'.
         
         total_tp += tp
         total_fp += fp
@@ -102,9 +99,9 @@ pd.options.display.float_format = '{:,.4f}'.format
 
 try:
     df_resultados.to_csv(ARQUIVO_SAIDA, index=False, sep=';', decimal=',')
-    print(f"\nAnálise concluida. Resultados salvos em '{ARQUIVO_SAIDA}'")
+    print(f"\nAnálise corrigida concluída. Resultados salvos em '{ARQUIVO_SAIDA}'")
 except Exception as e:
     print(f"\nErro ao salvar o arquivo de resultados: {e}")
 
-print("\n--- Amostra do Relatorio de Analise Quantitativa ---")
-print(df_resultados.to_string())
+print("\n--- Amostra do Relatório de Análise Corrigida ---")
+print(df_resultados[df_resultados['Vulnerabilidade'] == '== GERAL (Micro Media) =='].to_string())

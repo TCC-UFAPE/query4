@@ -40,10 +40,10 @@ for modelo in modelos:
         
         y_predito = df_modelo[coluna_predita].astype(str).str.lower() == 'true'
 
-        tp = (y_real & y_predito).sum()      # Acertos: O modelo previu 'True' e o real era 'True'.
-        fp = (~y_real & y_predito).sum()     # Erros (Tipo I): Sempre será 0, pois ~y_real é sempre 'False'.
-        fn = (y_real & ~y_predito).sum()     # Erros (Tipo II): O modelo previu 'False' quando o real era 'True'.
-        tn = (~y_real & ~y_predito).sum()     # Acertos Negativos: Sempre será 0, pois ~y_real é sempre 'False'.
+        tp = (y_real & y_predito).sum()      
+        fp = (~y_real & y_predito).sum()     
+        fn = (y_real & ~y_predito).sum()     
+        tn = (~y_real & ~y_predito).sum() 
         
         total_tp += tp
         total_fp += fp
